@@ -94,22 +94,20 @@ public class IocProcess extends AbstractProcessor {
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         mProxyMap.clear();
+
+        //添加需要处理的注解
         List<Class> classList = new ArrayList<>();
         classList.add(ViewById.class);
 
         //保存注解
-        if (!saveAnnotation(roundEnv,classList)){
+        if (!saveAnnotation(roundEnv, classList)) {
             return false;
         }
 
-        for (String key :
-                mProxyMap.keySet()) {
+        for (String key : mProxyMap.keySet()) {
             ProxyInfo proxyInfo = mProxyMap.get(key);
-
-//            proxyInfo.generateJavaCode();
-
+            //创建一个新的源文件，并写入
             try {
-
                 JavaFileObject jfo = mFilerUtils.createSourceFile(
                         proxyInfo.getProxyClassFullName(),
                         proxyInfo.getTypeElement()
@@ -128,7 +126,14 @@ public class IocProcess extends AbstractProcessor {
         return false;
     }
 
-    private boolean saveAnnotation(RoundEnvironment roundEnv,List<Class> list) {
+    /**
+     * 获取并保存需要处理的注解
+     *
+     * @param roundEnv
+     * @param list
+     * @return
+     */
+    private boolean saveAnnotation(RoundEnvironment roundEnv, List<Class> list) {
         for (Class clazz : list) {
             //获取被注解的元素
             Set<? extends Element> elements = roundEnv.getElementsAnnotatedWith(clazz);
@@ -145,7 +150,7 @@ public class IocProcess extends AbstractProcessor {
                 PackageElement packageElement = mElementUtils.getPackageOf(typeElement);
                 String packageName = packageElement.getQualifiedName().toString();
                 //类的标志ID
-                String id=packageName+"."+qualifiedName;
+                String id = packageName + "." + qualifiedName;
 
                 //以外部类为单位保存
                 ProxyInfo proxyInfo = mProxyMap.get(id);
@@ -167,7 +172,7 @@ public class IocProcess extends AbstractProcessor {
      * @return
      */
     private boolean checkAnnotationValid(Element annotatedElement) {
-        if (ClassValidator.isPrivate(annotatedElement)){
+        if (ClassValidator.isPrivate(annotatedElement)) {
             error(annotatedElement, "%s() must can not be private.", annotatedElement.getSimpleName());
             return false;
         }

@@ -4,6 +4,7 @@ import com.heiduo.annotation.ViewById;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 
@@ -16,6 +17,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import javax.annotation.processing.Filer;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.PackageElement;
@@ -100,78 +102,23 @@ class ProxyInfo {
             }
         }
 
+        //注意修改包名
+        ParameterizedTypeName typeName =ParameterizedTypeName.get(ClassName.get("com.heiduo.annotationlibrary"
+                ,ProxyInfo.PROXY)
+                ,ClassName.get(typeElement.asType()));
         //类
         TypeSpec activityProxy = TypeSpec.classBuilder(proxyClassName)
                 .addModifiers(Modifier.PUBLIC)
-                .addSuperinterface(ClassName.get("com.heiduo.annotationlibrary",ProxyInfo.PROXY
-                        +"<" + typeElement.getQualifiedName() + ">"))
+                .addSuperinterface(typeName)
                 .addMethod(inject)
                 .addMethod(initViewByIdBuild.build())
                 .build();
 
         //包
         JavaFile javaFile = JavaFile.builder(packageName, activityProxy)
-//                .addStaticImport(ClassName.get("com.heiduo.annotationlibrary", "annotationlibrary"), "*")
-//                .addStaticImport(ClassName.get("com.heiduo.annotation", "annotation"), "*")
-//                .addStaticImport(ClassName.get(packageName, "R"), "R")
                 .build();
 
         return javaFile.toString();
-        /*try {
-            Writer writer = javaFile.toJavaFileObject().openWriter();
-            writer.write(javaFile.toString());
-            writer.flush();
-            writer.close();
-//            javaFile.writeTo(System.out);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }*/
-
-        /*try {
-            javaFile.writeTo(System.out);
-//            javaFile.writeTo();
-//            javaFile.writeTo();
-//            javaFile.writeTo(new File(getProxyClassFullName()));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }*/
-    }
-
-    /**
-     * 绑定View
-     *
-     * @param variableElement
-     * @return
-     */
-    private String generateViewById(VariableElement variableElement) {
-        //获取注释值
-        int id = variableElement.getAnnotation(ViewById.class).value();
-        //获取变量类型
-        String type = variableElement.asType().toString();
-        //获取变量名字
-        String name = variableElement.getSimpleName().toString();
-
-        StringBuilder builder = new StringBuilder();
-
-        builder.append(" if(source instanceof android.app.Activity) { \n");
-        builder.append(" host." + name).append(" = ");
-        if (id == -1) {
-            builder.append("(" + type + ")(((android.app.Activity)source).findViewById( " + "R.id." + name + "));\n");
-        } else {
-            builder.append("(" + type + ")(((android.app.Activity)source).findViewById( " + id + "));\n");
-        }
-
-        builder.append("\n}else{\n");
-
-        builder.append("host." + name).append(" = ");
-        if (id == -1) {
-            builder.append("(" + type + ")(((android.view.View)source).findViewById( " + "R.id." + name + "));\n");
-        } else {
-            builder.append("(" + type + ")(((android.view.View)source).findViewById( " + id + "));\n");
-        }
-        builder.append("}\n");
-
-        return builder.toString();
     }
 
     private void generateViewById(MethodSpec.Builder builder, VariableElement variableElement) {
